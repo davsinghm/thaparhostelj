@@ -1,4 +1,11 @@
-package com.temp.jhostelapp;
+package com.temp.jhostelapp.utils;
+
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+
+import com.temp.jhostelapp.Constants;
+import com.temp.jhostelapp.Params;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -16,11 +23,15 @@ import static com.temp.jhostelapp.Constants.CHARSET_UTF8;
  */
 public class NetworkUtils {
 
+    public static boolean isNetworkAvailable(Context context) {
+        ConnectivityManager cm = (ConnectivityManager)
+                context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = cm.getActiveNetworkInfo();
 
+        return networkInfo != null && networkInfo.isConnected();
+    }
 
     public static String makeHttpRequest(String urlStr, String method, Params params) throws IOException {
-
-
 
         HttpURLConnection httpURLConnection;
 

@@ -1,11 +1,14 @@
 package com.temp.jhostelapp.ui;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.CoordinatorLayout;
+import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,24 +17,19 @@ import android.widget.Toast;
 import com.temp.jhostelapp.Cache;
 import com.temp.jhostelapp.Constants;
 import com.temp.jhostelapp.DoInBackground;
-import com.temp.jhostelapp.utils.NetworkUtils;
 import com.temp.jhostelapp.Params;
 import com.temp.jhostelapp.PreferenceHelper;
 import com.temp.jhostelapp.R;
 import com.temp.jhostelapp.utils.FileUtils;
-import com.temp.jhostelapp.utils.Utils;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import com.temp.jhostelapp.utils.NetworkUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
 
 /**
- * Created by DSM_ on 1/30/16.
+ * Created by DSM_ on 1/31/16.
  */
-public class MainFragment extends Fragment implements DoInBackground.Callback {
+public class ComplaintsFragment extends Fragment implements DoInBackground.Callback {
 
     private DoInBackground doInBackground = null;
     private NotiAdapter adapter;
@@ -39,40 +37,46 @@ public class MainFragment extends Fragment implements DoInBackground.Callback {
     private long currentTimestamp;
     private CoordinatorLayout coordinatorLayout;
     private Snackbar snackbar;
-    private ArrayList<Noti> notiList;
-
+    private ArrayList<Noti> complaintList;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_main, container, false);
+        return inflater.inflate(R.layout.fragment_complaints, container, false);
     }
 
     @Override
     public void onStart() {
         super.onStart();
 
-        notiList = new ArrayList<>();
-        lastTimestamp = PreferenceHelper.getLong(getContext(), PreferenceHelper.TIME_LASTEST_NOTIFICATIONS, 0);
+        complaintList = new ArrayList<>();
+        lastTimestamp = PreferenceHelper.getLong(getContext(), PreferenceHelper.TIME_LASTEST_COMPLAINTS, 0);
         currentTimestamp = System.currentTimeMillis() / 1000;
 
-        if (lastTimestamp != 0 && FileUtils.readCache(getContext(), Constants.FILE_NOTIFICATIONS) == null) {
-            //checking if file doesn't exists (when read/write fails) and lastTimestamp should be made 0
+        if (lastTimestamp != 0 && FileUtils.readCache(getContext(), Constants.FILE_COMPLAINTS) == null) {
             lastTimestamp = 0;
         }
 
         doInBackground = getDoInBackground();
         doInBackground.execute();
 
-        Cache.load(getContext(), new Noti(), notiList, Constants.FILE_NOTIFICATIONS);
+        Cache.load(getContext(), new Noti(), complaintList, Constants.FILE_COMPLAINTS);
+
+        FloatingActionButton floatingActionButton = (FloatingActionButton) getActivity().findViewById(R.id.floatingActionButton);
+        floatingActionButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(getContext(), ComplaintActivity.class);
+                startActivity(intent);
+            }
+        });
 
         coordinatorLayout = (CoordinatorLayout) getActivity().findViewById(R.id.coordinatorLayout);
-        adapter = new NotiAdapter(notiList);
+        adapter = new NotiAdapter(complaintList);
 
         RecyclerView recyclerView = (RecyclerView) getActivity().findViewById(R.id.recyclerView);
         recyclerView.setHasFixedSize(false);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         recyclerView.setAdapter(adapter);
-
     }
 
 
@@ -84,7 +88,6 @@ public class MainFragment extends Fragment implements DoInBackground.Callback {
             doInBackground.cancel(true);
 
     }
-
 
     @Override
     public void onPreExecute() {
@@ -104,11 +107,11 @@ public class MainFragment extends Fragment implements DoInBackground.Callback {
 
         try {
             Params params = new Params();
-            params.add("rollNo", PreferenceHelper.getRollNo(getContext()));
+            /*params.add("rollNo", PreferenceHelper.getRollNo(getContext()));
             params.add("token", PreferenceHelper.getToken(getContext()));
-            params.add("timestamp", String.valueOf(lastTimestamp));
+            params.add("timestamp", String.valueOf(lastTimestamp));*/
 
-            return NetworkUtils.makeHttpRequest(Constants.URL_SERVER_NOTI, "POST", params);
+            return NetworkUtils.makeHttpRequest(Constants.URL_SERVER_COMPLAINTS, "POST", params);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -119,49 +122,6 @@ public class MainFragment extends Fragment implements DoInBackground.Callback {
     @Override
     public void onPostExecute(String result) {
 
-        doInBackground = null;
-
-        int newAdded = 0; //TODO remove debug
-
-        try {
-
-            if (result != null) {
-
-                JSONObject jsonObject = new JSONObject(result);
-                int returnCode = jsonObject.getInt("returnCode");
-                if (returnCode == 1) {
-                    JSONArray jsonArray = jsonObject.getJSONArray("notifications");
-
-                    for (int i = 0; i < (newAdded = jsonArray.length()); i++) {
-                        JSONObject jso = jsonArray.getJSONObject(i);
-                        Noti noti = new Noti().fromJSON(jso);
-                        if (noti != null)
-                            notiList.add(i, noti);
-                    }
-                    //Save current timestamp
-                    PreferenceHelper.putLong(getContext(), PreferenceHelper.TIME_LASTEST_NOTIFICATIONS, currentTimestamp);
-
-                } else
-                    showError(jsonObject.getString(jsonObject.getString("extraInfo")));
-            } else if (NetworkUtils.isNetworkAvailable(getContext()))
-                showError("OFFLINE");
-            else showError("NETWORK_ERROR");
-
-        } catch (JSONException e) {
-            e.printStackTrace();
-            showError(e.toString());
-        }
-
-        if (newAdded > 0) {
-            String notiStr = Cache.arrayToJSONArray(notiList);
-            if (notiStr != null)
-                FileUtils.writeStringCache(getContext(), Constants.FILE_NOTIFICATIONS, notiStr);
-        }
-
-        adapter.setArrayList(notiList);
-        adapter.notifyDataSetChanged();
-        //TODO remove error
-        Toast.makeText(getContext(), "New: " + newAdded + ", Total: " + notiList.size(), Toast.LENGTH_SHORT).show();
     }
 
     private void showError(String error) {

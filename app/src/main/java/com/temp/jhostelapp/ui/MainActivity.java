@@ -1,4 +1,4 @@
-package com.temp.jhostelapp;
+package com.temp.jhostelapp.ui;
 
 import android.os.Bundle;
 import android.support.design.widget.NavigationView;
@@ -13,6 +13,11 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
 
+import com.temp.jhostelapp.Constants;
+import com.temp.jhostelapp.MainActivityInterface;
+import com.temp.jhostelapp.PreferenceHelper;
+import com.temp.jhostelapp.R;
+import com.temp.jhostelapp.ui.ComplaintsFragment;
 import com.temp.jhostelapp.ui.LoginFragment;
 import com.temp.jhostelapp.ui.MainFragment;
 
@@ -116,16 +121,29 @@ public class MainActivity extends AppCompatActivity
     public boolean onNavigationItemSelected(MenuItem item) {
         int id = item.getItemId();
 
-        if (id == R.id.nav_camera) {
-            PreferenceHelper.putRollNo(this, null);
-            PreferenceHelper.putToken(this, null);
-            PreferenceHelper.putLong(this, "lastTimestamp", 0);
-            File file = new File(getCacheDir(), "notifications");
-            file.delete();
+        switch (id) {
+            case R.id.nav_notifications:
+                showMain();
+                break;
+            case R.id.nav_complaints:
+                Fragment fragment = new ComplaintsFragment();
+                getSupportFragmentManager().beginTransaction()
+                        .replace(R.id.frameLayout, fragment)
+                        .commit();
+                break;
 
-            Toast.makeText(this, "Logged out successfully", Toast.LENGTH_SHORT).show();
-            promptLogin();
+            case R.id.nav_logout:
+                PreferenceHelper.putRollNo(this, null);
+                PreferenceHelper.putToken(this, null);
+                PreferenceHelper.putLong(this, PreferenceHelper.TIME_LASTEST_NOTIFICATIONS, 0);
+                PreferenceHelper.putLong(this, PreferenceHelper.TIME_LASTEST_NOTIFICATIONS, 0);
 
+                new File(getCacheDir(), Constants.FILE_COMPLAINTS).delete();
+                new File(getCacheDir(), Constants.FILE_NOTIFICATIONS).delete();
+
+                Toast.makeText(this, "Logged out successfully", Toast.LENGTH_SHORT).show();
+                promptLogin();
+                break;
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);

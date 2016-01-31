@@ -1,8 +1,8 @@
 package com.temp.jhostelapp.ui;
 
-import android.app.ProgressDialog;
-import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.design.widget.CoordinatorLayout;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.text.TextUtils;
 import android.view.KeyEvent;
@@ -16,11 +16,13 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.temp.jhostelapp.Constants;
+import com.temp.jhostelapp.DoInBackground;
 import com.temp.jhostelapp.MainActivityInterface;
-import com.temp.jhostelapp.NetworkUtils;
 import com.temp.jhostelapp.Params;
 import com.temp.jhostelapp.PreferenceHelper;
 import com.temp.jhostelapp.R;
+import com.temp.jhostelapp.utils.NetworkUtils;
+import com.temp.jhostelapp.utils.Utils;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -30,12 +32,16 @@ import java.io.IOException;
 /**
  * Created by DSM_ on 1/29/16.
  */
-public class LoginFragment extends Fragment {
+public class LoginFragment extends Fragment implements DoInBackground.Callback {
 
-    private UserLoginTask mAuthTask = null;
+    private DoInBackground doInBackground = null;
+    private CoordinatorLayout coordinatorLayout;
+    private Snackbar snackbar;
 
     private EditText mUsernameView;
     private EditText mPasswordView;
+    private String mUsername;
+    private String mPassword;
 
     private MainActivityInterface mMainActivityInterface;
 
@@ -44,6 +50,7 @@ public class LoginFragment extends Fragment {
         super.onStart();
 
         mMainActivityInterface = (MainActivityInterface) getActivity();
+        coordinatorLayout = (CoordinatorLayout) getActivity().findViewById(R.id.coordinatorLayout);
 
         mUsernameView = (EditText) getActivity().findViewById(R.id.username);
 
@@ -71,17 +78,11 @@ public class LoginFragment extends Fragment {
     }
 
     @Override
-    public void onPause() {
-        super.onPause();
-
-    }
-
-    @Override
     public void onStop() {
         super.onStop();
 
-        if (mAuthTask != null)
-            mAuthTask.cancel(true);
+        if (doInBackground != null)
+            doInBackground.cancel(true);
     }
 
     @Override
@@ -91,7 +92,7 @@ public class LoginFragment extends Fragment {
 
 
     private void attemptLogin() {
-        if (mAuthTask != null) {
+        if (doInBackground != null) {
             return;
         }
 
@@ -134,8 +135,11 @@ public class LoginFragment extends Fragment {
             focusView.requestFocus();
         } else {
 
-            mAuthTask = new UserLoginTask(email, password);
-            mAuthTask.execute((Void) null);
+            mUsername = email;
+            mPassword = password;
+
+            doInBackground = getDoInBackground();
+            doInBackground.execute();
         }
     }
 
@@ -147,95 +151,110 @@ public class LoginFragment extends Fragment {
         return password.length() > 4;
     }
 
-    public class UserLoginTask extends AsyncTask<Void, String, String> {
 
-        private final String mUsername;
-        private final String mPassword;
-        private ProgressDialog mProgressDialog;
+    private void showError(String error) {
+        if (error != null) {
+            switch (error) {
+                case "OFFLINE":
+                    showOfflineSnackbar(false);
+                    break;
+                case "NETWORK_ERROR":
+                    showOfflineSnackbar(true);
+                    break;
+                case "INVALID_UN_PW":
+                    mPasswordView.setError(getString(R.string.error_incorrect_password));
+                    mPasswordView.requestFocus();
+                    break;
+                case "INVALID_TOKEN":
+                case "FIELDS_MISSING":
+                case "QUERY_FAILED":
+                case "CONNECTION_FAILED":
+                default:
+                    Toast.makeText(getContext(), "Error: " + error, Toast.LENGTH_LONG).show();
 
-        UserLoginTask(String username, String password) {
-            mUsername = username;
-            mPassword = password;
+            }
+        }
+    }
+
+    private void showOfflineSnackbar(boolean error) {
+        snackbar = Snackbar.make(coordinatorLayout, error ? "You're offline" : "Couldn't connect to internet", Snackbar.LENGTH_INDEFINITE).setAction("Try Again", new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                doInBackground = getDoInBackground();
+                doInBackground.execute();
+            }
+        });
+        snackbar.show();
+    }
+
+    private DoInBackground getDoInBackground() {
+        return new DoInBackground(getContext(), this, getString(R.string.progress_signing));
+    }
+
+    @Override
+    public void onPreExecute() {
+        Utils.hideKeyboard(getContext(), mPasswordView);
+
+        if (snackbar != null)
+            snackbar.dismiss();
+
+    }
+
+    @Override
+    public String doInBackground(String... strings) {
+
+        try {
+
+            Params params = new Params();
+            params.add("rollNo", mUsername);
+            params.add("password", mPassword);
+
+            return NetworkUtils.makeHttpRequest(Constants.URL_SERVER_LOGIN, "POST", params);
+
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
-        @Override
-        protected void onPreExecute() {
-            mProgressDialog = new ProgressDialog(getContext());
-            mProgressDialog.setMessage(getString(R.string.progress_signing));
-            mProgressDialog.setCancelable(false);
-            mProgressDialog.show();
-        }
+        return null;
+    }
 
-        @Override
-        protected String doInBackground(Void... params) {
+    @Override
+    public void onCancelled() {
+        doInBackground = null;
+    }
 
-            Params params1 = new Params();
-            params1.add("rollNo", mUsername);
-            params1.add("password", mPassword);
+    @Override
+    public void onPostExecute(String result) {
+        doInBackground = null;
 
+        if (result != null) {
             try {
-
-                String string = NetworkUtils.makeHttpRequest(Constants.URL_SERVER_LOGIN, "POST", params1);
-                JSONObject jsonObject = new JSONObject(string);
+                JSONObject jsonObject = new JSONObject(result);
                 int returnCode = jsonObject.getInt("returnCode");
 
                 if (returnCode == 1) {
                     String token = jsonObject.getString("token");
-                    publishProgress(token);
-                    return null;
+
+                    PreferenceHelper.putRollNo(getContext(), mUsername);
+                    PreferenceHelper.putToken(getContext(), token);
+
+                    Toast.makeText(getContext(), "Logged in successfully", Toast.LENGTH_SHORT).show();
+                    mMainActivityInterface.loginSuccessful();
+
 
                 } else {
-                    return jsonObject.getString("extraInfo");
+                    showError(jsonObject.getString("extraInfo"));
                 }
+
 
             } catch (JSONException e) {
-                e.printStackTrace();
-                return e.toString();
-            } catch (IOException e) {
-                e.printStackTrace();
-                return e.toString();
+                showError(e.toString());
             }
-
-        }
-
-        @Override
-        protected void onProgressUpdate(String... values) {
-
-            PreferenceHelper.putRollNo(getContext(), mUsername);
-            PreferenceHelper.putToken(getContext(), values[0]);
-        }
-
-        @Override
-        protected void onPostExecute(String error) {
-            mAuthTask = null;
-
-            mProgressDialog.dismiss();
-
-            if (error == null) {
-                Toast.makeText(getContext(), "Logged in successfully", Toast.LENGTH_SHORT).show();
-                mMainActivityInterface.loginSuccessful();
-
-            } else {
-
-                switch (error) {
-                    case "INVALID_UN_PW":
-                        mPasswordView.setError(getString(R.string.error_incorrect_password));
-                        mPasswordView.requestFocus();
-                        break;
-                    //TODO add all
-                    default:
-                        Toast.makeText(getContext(), "Error: " + error, Toast.LENGTH_LONG).show();
-
-                }
-
-            }
-        }
-
-        @Override
-        protected void onCancelled() {
-            mAuthTask = null;
-
-            mProgressDialog.dismiss();
-        }
+        } else if (NetworkUtils.isNetworkAvailable(getContext()))
+            showError("OFFLINE");
+        else
+            showError("NETWORK_ERROR");
     }
+
 }

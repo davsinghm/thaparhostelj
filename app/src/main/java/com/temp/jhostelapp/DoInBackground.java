@@ -12,6 +12,9 @@ import java.io.IOException;
 public class DoInBackground extends AsyncTask<String, Void, String> {
 
     public interface Callback {
+
+        void onPreExecute();
+
         void onPostExecute(String result);
 
         void onCancelled();
@@ -22,10 +25,12 @@ public class DoInBackground extends AsyncTask<String, Void, String> {
     private Context context;
     private Callback callback;
     private ProgressDialog progressDialog;
+    private String message;
 
-    public DoInBackground(Context context, Callback callback, Params params) {
+    public DoInBackground(Context context, Callback callback, String progressDialogMessage) {
         this.context = context;
         this.callback = callback;
+        this.message = progressDialogMessage;
     }
 
     @Override
@@ -33,9 +38,11 @@ public class DoInBackground extends AsyncTask<String, Void, String> {
         super.onPreExecute();
 
         progressDialog = new ProgressDialog(context);
-        progressDialog.setMessage(context.getString(R.string.progress_loading));
+        progressDialog.setMessage(message);
         progressDialog.setCancelable(false);
         progressDialog.show();
+
+        callback.onPreExecute();
 
     }
 
