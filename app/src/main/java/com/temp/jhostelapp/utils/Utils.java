@@ -1,4 +1,4 @@
-package com.temp.jhostelapp;
+package com.temp.jhostelapp.utils;
 
 /**
  * Created by DSM_ on 1/30/16.

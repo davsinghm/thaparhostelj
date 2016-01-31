@@ -3,11 +3,17 @@ package com.temp.jhostelapp;
 import android.content.Context;
 import android.preference.PreferenceManager;
 
+import com.temp.jhostelapp.utils.Utils;
+
 /**
  * Created by DSM_ on 1/30/16.
  */
 
 public class PreferenceHelper {
+
+    //preference names
+    final public static String TIME_LASTEST_NOTIFICATIONS = "time_lastest_notifications";
+    final public static String TIME_LASTEST_COMPLAINTS = "time_lastest_complaints";
 
     //caching frequently used strings
     private static String rollNo;

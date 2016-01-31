@@ -9,18 +9,21 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
+import com.temp.jhostelapp.Cache;
 import com.temp.jhostelapp.Constants;
 import com.temp.jhostelapp.DoInBackground;
-import com.temp.jhostelapp.FileUtils;
+import com.temp.jhostelapp.utils.FileUtils;
+import com.temp.jhostelapp.NetworkUtils;
 import com.temp.jhostelapp.Params;
 import com.temp.jhostelapp.PreferenceHelper;
 import com.temp.jhostelapp.R;
-import com.temp.jhostelapp.Utils;
+import com.temp.jhostelapp.utils.Utils;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
 /**
@@ -33,86 +36,35 @@ public class MainFragment extends Fragment implements DoInBackground.Callback {
     private RecyclerView recyclerView;
     private long lastTimestamp;
     private long currentTimestamp;
+    private String url;
+    private Params params;
+    private ArrayList<Noti> notiList;
 
     @Override
-    public void onStart() {
-        super.onStart();
-
-        lastTimestamp = PreferenceHelper.getLong(getContext(), "lastTimestamp", 0);
-        currentTimestamp = System.currentTimeMillis() / 1000;
-
-        if (lastTimestamp != 0 && FileUtils.readCache(getContext(), "notifications") == null) {
-            //checking if file doesnt exists (when read/write fails) and lastTimestamp should be made 0
-            lastTimestamp = 0;
-        }
-
-        Params params = new Params();
-        params.add("rollNo", PreferenceHelper.getRollNo(getContext()));
-        params.add("token", PreferenceHelper.getToken(getContext()));
-        params.add("timestamp", String.valueOf(lastTimestamp));
-
-        doInBackground = new DoInBackground(getContext(), this, params);
-        doInBackground.execute(Constants.URL_SERVER_NOTI);
-
-        recyclerView = (RecyclerView) getActivity().findViewById(R.id.recyclerView);
-        recyclerView.setHasFixedSize(false);
-        LinearLayoutManager layoutManager = new LinearLayoutManager(getContext());
-        recyclerView.setLayoutManager(layoutManager);
-        adapter = new NotiAdapter(new ArrayList<Noti>());
-        recyclerView.setAdapter(adapter);
-
+    public void onCancelled() {
+        doInBackground =null;
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_main, container, false);
-    }
-
-    private void loadSavedNoti(ArrayList<Noti> arrayList) {
-        String cacheStr = FileUtils.readCache(getContext(), "notifications");
-        if (cacheStr != null) {
-            try {
-
-                JSONArray jsonArray = new JSONArray(cacheStr);
-
-                for (int i = 0; i < jsonArray.length(); i++) {
-                    JSONObject jso = jsonArray.getJSONObject(i);
-                    Noti noti = new Noti();
-                    noti.setTitle(jso.getString("title"));
-                    noti.setMessage(jso.getString("body"));
-                    noti.setTimestamp(Utils.parseLong(jso.getString("timestamp"), 0));
-                    arrayList.add(noti);
-                }
-
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-
-        }
-    }
-
-    private String arrayToJSONArray(ArrayList<Noti> arrayList) {
-        JSONArray jsonArray = new JSONArray();
+    public String doInBackground(String... strings) {
 
         try {
-            for (Noti noti : arrayList) {
-                JSONObject jsonObject = new JSONObject();
-                jsonObject.put("title", noti.getTitle());
-                jsonObject.put("body", noti.getMessage());
-                jsonObject.put("timestamp", noti.getTimestamp() + "");
-                jsonArray.put(jsonObject);
-            }
-        } catch (JSONException e) {
-            return null;
+            String response = NetworkUtils.makeHttpRequest(Constants.URL_SERVER_NOTI, "POST", params);
+            return response;
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        return jsonArray.toString();
+
+
+        return null;
     }
 
     @Override
     public void onPostExecute(String result) {
 
-        ArrayList<Noti> arrayList = new ArrayList<>();
-        int newAdded = 0;
+        doInBackground = null;
+
+        int newAdded = 0; //TODO remove debug
 
         try {
 
@@ -125,43 +77,78 @@ public class MainFragment extends Fragment implements DoInBackground.Callback {
 
                     for (int i = 0; i < (newAdded = jsonArray.length()); i++) {
                         JSONObject jso = jsonArray.getJSONObject(i);
-                        Noti noti = new Noti();
-                        noti.setTitle(jso.getString("title"));
-                        noti.setMessage(jso.getString("body"));
-                        noti.setTimestamp(Utils.parseLong(jso.getString("timestamp"), 0));
-                        arrayList.add(noti);
+                        Noti noti = new Noti().fromJSON(jso);
+                        if (noti != null)
+                        notiList.add(i, noti);
                     }
                     //Save current timestamp
-                    PreferenceHelper.putLong(getContext(), "lastTimestamp", currentTimestamp);
+                    PreferenceHelper.putLong(getContext(), PreferenceHelper.TIME_LASTEST_NOTIFICATIONS, currentTimestamp);
 
-                } else
-                    onErrorOccurred(jsonObject.getString(jsonObject.getString("extraInfo")));
+                } //else
+                    //TODO onErrorOccurred(jsonObject.getString(jsonObject.getString("extraInfo")));
             }
 
         } catch (JSONException e) {
             e.printStackTrace();
-            onErrorOccurred(e.toString());
+           //TODO onErrorOccurred(e.toString());
         }
 
-        loadSavedNoti(arrayList);
 
         if (newAdded > 0) {
-            String notiStr = arrayToJSONArray(arrayList);
+            String notiStr = Cache.arrayToJSONArray(notiList);
             if (notiStr != null)
-                FileUtils.writeStringCache(getContext(), "notifications", notiStr);
+                FileUtils.writeStringCache(getContext(), Constants.FILE_NOTIFICATIONS, notiStr);
         }
 
-        adapter.setArrayList(arrayList);
+        adapter.setArrayList(notiList);
         adapter.notifyDataSetChanged();
-        Toast.makeText(getContext(), "New: " + newAdded + ", Total: " + arrayList.size(), Toast.LENGTH_SHORT).show();
+        Toast.makeText(getContext(), "New: " + newAdded + ", Total: " + notiList.size(), Toast.LENGTH_SHORT).show();
     }
 
     @Override
-    public void onCancelled() {
+    public void onStop() {
+        super.onStop();
+
+        if (doInBackground != null)
+            doInBackground.cancel(true);
+
     }
 
     @Override
-    public void onErrorOccurred(String error) {
+    public void onStart() {
+        super.onStart();
+
+        notiList = new ArrayList<>();
+        lastTimestamp = PreferenceHelper.getLong(getContext(), PreferenceHelper.TIME_LASTEST_NOTIFICATIONS, 0);
+        currentTimestamp = System.currentTimeMillis() / 1000;
+
+        if (lastTimestamp != 0 && FileUtils.readCache(getContext(), Constants.FILE_NOTIFICATIONS) == null) {
+            //checking if file doesnt exists (when read/write fails) and lastTimestamp should be made 0
+            lastTimestamp = 0;
+        }
+
+        params = new Params();
+        params.add("rollNo", PreferenceHelper.getRollNo(getContext()));
+        params.add("token", PreferenceHelper.getToken(getContext()));
+        params.add("timestamp", String.valueOf(lastTimestamp));
+
+        doInBackground = new DoInBackground(getContext(), this, params);
+        doInBackground.execute();
+
+        recyclerView = (RecyclerView) getActivity().findViewById(R.id.recyclerView);
+        recyclerView.setHasFixedSize(false);
+        LinearLayoutManager layoutManager = new LinearLayoutManager(getContext());
+        recyclerView.setLayoutManager(layoutManager);
+        Cache.load(getContext(), new Noti(), notiList, Constants.FILE_NOTIFICATIONS);
+        adapter = new NotiAdapter(notiList);
+        recyclerView.setAdapter(adapter);
 
     }
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        return inflater.inflate(R.layout.fragment_main, container, false);
+    }
+
+
 }

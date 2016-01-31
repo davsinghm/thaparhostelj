@@ -1,20 +1,17 @@
-package com.temp.jhostelapp;
+package com.temp.jhostelapp.utils;
 
 import android.content.Context;
-import android.os.Environment;
-import android.support.v4.content.ContextCompat;
 
-import com.squareup.okhttp.internal.Util;
+import com.temp.jhostelapp.utils.Utils;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 
 /**
- * Created by dsm on 1/30/16.
+ * Created by DSM_ on 1/30/16.
  */
 public class FileUtils {
 

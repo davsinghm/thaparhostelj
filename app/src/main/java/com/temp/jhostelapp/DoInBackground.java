@@ -16,18 +16,16 @@ public class DoInBackground extends AsyncTask<String, Void, String> {
 
         void onCancelled();
 
-        void onErrorOccurred(String error);
+        String doInBackground(String... strings);
     }
 
     private Context context;
     private Callback callback;
     private ProgressDialog progressDialog;
-    private Params params;
 
     public DoInBackground(Context context, Callback callback, Params params) {
         this.context = context;
         this.callback = callback;
-        this.params = params;
     }
 
     @Override
@@ -58,23 +56,17 @@ public class DoInBackground extends AsyncTask<String, Void, String> {
     }
 
     @Override
-    protected void onProgressUpdate(Void... values) {
-        super.onProgressUpdate(values);
-    }
-
-    @Override
     protected String doInBackground(String... params) {
 
-        String url = params[0];
+        //TODO remove dialog wait simulation
 
         try {
-            return NetworkUtils.makeHttpRequest(url, "POST", this.params);
-
-        } catch (IOException e) {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
             e.printStackTrace();
-            callback.onErrorOccurred(e.toString());
-            return null;
         }
+
+        return callback.doInBackground(params);
 
     }
 }

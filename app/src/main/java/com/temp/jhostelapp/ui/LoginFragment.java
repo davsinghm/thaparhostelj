@@ -16,7 +16,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.temp.jhostelapp.Constants;
-import com.temp.jhostelapp.Interface;
+import com.temp.jhostelapp.MainActivityInterface;
 import com.temp.jhostelapp.NetworkUtils;
 import com.temp.jhostelapp.Params;
 import com.temp.jhostelapp.PreferenceHelper;
@@ -37,13 +37,13 @@ public class LoginFragment extends Fragment {
     private EditText mUsernameView;
     private EditText mPasswordView;
 
-    private Interface mInterface;
+    private MainActivityInterface mMainActivityInterface;
 
     @Override
     public void onStart() {
         super.onStart();
 
-        mInterface = (Interface) getActivity();
+        mMainActivityInterface = (MainActivityInterface) getActivity();
 
         mUsernameView = (EditText) getActivity().findViewById(R.id.username);
 
@@ -213,7 +213,7 @@ public class LoginFragment extends Fragment {
 
             if (error == null) {
                 Toast.makeText(getContext(), "Logged in successfully", Toast.LENGTH_SHORT).show();
-                mInterface.loginSuccessful();
+                mMainActivityInterface.loginSuccessful();
 
             } else {
 
