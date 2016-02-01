@@ -8,7 +8,6 @@ import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,21 +22,26 @@ import com.temp.jhostelapp.R;
 import com.temp.jhostelapp.utils.FileUtils;
 import com.temp.jhostelapp.utils.NetworkUtils;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.IOException;
 import java.util.ArrayList;
 
 /**
- * Created by DSM_ on 1/31/16.
+ * Created by DSM_ on 1/30/16.
  */
 public class ComplaintsFragment extends Fragment implements DoInBackground.Callback {
 
     private DoInBackground doInBackground = null;
-    private NotiAdapter adapter;
+    private ComplaintAdapter adapter;
     private long lastTimestamp;
     private long currentTimestamp;
     private CoordinatorLayout coordinatorLayout;
     private Snackbar snackbar;
-    private ArrayList<Noti> complaintList;
+    private ArrayList<Complaint> complaintList;
+
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -53,13 +57,11 @@ public class ComplaintsFragment extends Fragment implements DoInBackground.Callb
         currentTimestamp = System.currentTimeMillis() / 1000;
 
         if (lastTimestamp != 0 && FileUtils.readCache(getContext(), Constants.FILE_COMPLAINTS) == null) {
+            //checking if file doesn't exists (when read/write fails) and lastTimestamp should be made 0
             lastTimestamp = 0;
         }
 
-        doInBackground = getDoInBackground();
-        doInBackground.execute();
-
-        Cache.load(getContext(), new Noti(), complaintList, Constants.FILE_COMPLAINTS);
+        Cache.load(getContext(), new Complaint(), complaintList, Constants.FILE_COMPLAINTS);
 
         FloatingActionButton floatingActionButton = (FloatingActionButton) getActivity().findViewById(R.id.floatingActionButton);
         floatingActionButton.setOnClickListener(new View.OnClickListener() {
@@ -69,14 +71,15 @@ public class ComplaintsFragment extends Fragment implements DoInBackground.Callb
                 startActivity(intent);
             }
         });
-
         coordinatorLayout = (CoordinatorLayout) getActivity().findViewById(R.id.coordinatorLayout);
-        adapter = new NotiAdapter(complaintList);
+        adapter = new ComplaintAdapter(complaintList);
 
         RecyclerView recyclerView = (RecyclerView) getActivity().findViewById(R.id.recyclerView);
-        recyclerView.setHasFixedSize(false);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         recyclerView.setAdapter(adapter);
+
+        doInBackground = getDoInBackground();
+        doInBackground.execute();
     }
 
 
@@ -89,11 +92,17 @@ public class ComplaintsFragment extends Fragment implements DoInBackground.Callb
 
     }
 
+
     @Override
     public void onPreExecute() {
 
         if (snackbar != null)
             snackbar.dismiss();
+
+        if (!NetworkUtils.isNetworkAvailable(getContext())) {
+            doInBackground.cancel(true);
+            showError("OFFLINE");
+        }
 
     }
 
@@ -107,9 +116,9 @@ public class ComplaintsFragment extends Fragment implements DoInBackground.Callb
 
         try {
             Params params = new Params();
-            /*params.add("rollNo", PreferenceHelper.getRollNo(getContext()));
+            params.add("rollNo", PreferenceHelper.getRollNo(getContext()));
             params.add("token", PreferenceHelper.getToken(getContext()));
-            params.add("timestamp", String.valueOf(lastTimestamp));*/
+            params.add("timestamp", String.valueOf(lastTimestamp));
 
             return NetworkUtils.makeHttpRequest(Constants.URL_SERVER_COMPLAINTS, "POST", params);
         } catch (IOException e) {
@@ -122,6 +131,57 @@ public class ComplaintsFragment extends Fragment implements DoInBackground.Callb
     @Override
     public void onPostExecute(String result) {
 
+        doInBackground = null;
+
+        int newAdded = 0, modified = 0; //TODO remove debug
+
+        try {
+
+            if (result != null) {
+
+                JSONObject jsonObject = new JSONObject(result);
+                int returnCode = jsonObject.getInt("returnCode");
+                if (returnCode == 1) {
+                    JSONArray jsonArray = jsonObject.getJSONArray("complaints");
+
+                    for (int i = 0; i < jsonArray.length(); i++) {
+                        JSONObject jso = jsonArray.getJSONObject(i);
+                        Complaint complaint = new Complaint().fromJSON(jso);
+                        if (complaint != null) {
+                            if (complaintList.contains(complaint)) {
+                                int index = complaintList.indexOf(complaint);
+                                complaintList.remove(index);
+                                complaintList.add(index, complaint);
+                                newAdded++;
+                            } else {
+                                complaintList.add(i, complaint);
+                                modified++;
+                            }
+                        }
+                    }
+                    //Save current timestamp
+                    PreferenceHelper.putLong(getContext(), PreferenceHelper.TIME_LASTEST_COMPLAINTS, currentTimestamp);
+
+                } else
+                    showError(jsonObject.getString(jsonObject.getString("extraInfo")));
+            } else
+                showError("NETWORK_ERROR");
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+            showError("NETWORK_ERROR");
+        }
+
+        if (newAdded > 0) {
+            String compStr = Cache.arrayToJSONArray(complaintList);
+            if (compStr != null)
+                FileUtils.writeStringCache(getContext(), Constants.FILE_COMPLAINTS, compStr);
+        }
+
+        adapter.setArrayList(complaintList);
+        adapter.notifyDataSetChanged();
+        //TODO remove error
+        Toast.makeText(getContext(), "New: " + newAdded + ", Modified: " + modified + ", Total: " + complaintList.size(), Toast.LENGTH_SHORT).show();
     }
 
     private void showError(String error) {
@@ -146,7 +206,7 @@ public class ComplaintsFragment extends Fragment implements DoInBackground.Callb
     }
 
     private void showOfflineSnackbar(boolean error) {
-        snackbar = Snackbar.make(coordinatorLayout, error ? "You're offline" : "Couldn't connect to internet", Snackbar.LENGTH_INDEFINITE).setAction("Try Again", new View.OnClickListener() {
+        snackbar = Snackbar.make(coordinatorLayout, error ? "Couldn't connect to internet" : "You're offline", Snackbar.LENGTH_INDEFINITE).setAction("Try Again", new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 doInBackground = getDoInBackground();

@@ -61,4 +61,18 @@ public class Noti {
             return null;
         }
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Noti noti = (Noti) o;
+
+        if (timestamp != noti.timestamp) return false;
+        if (title != null ? !title.equals(noti.title) : noti.title != null) return false;
+        return !(message != null ? !message.equals(noti.message) : noti.message != null);
+
+    }
+
 }

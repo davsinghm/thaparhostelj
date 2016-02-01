@@ -14,12 +14,11 @@ import android.widget.Toast;
 import com.temp.jhostelapp.Cache;
 import com.temp.jhostelapp.Constants;
 import com.temp.jhostelapp.DoInBackground;
-import com.temp.jhostelapp.utils.NetworkUtils;
 import com.temp.jhostelapp.Params;
 import com.temp.jhostelapp.PreferenceHelper;
 import com.temp.jhostelapp.R;
 import com.temp.jhostelapp.utils.FileUtils;
-import com.temp.jhostelapp.utils.Utils;
+import com.temp.jhostelapp.utils.NetworkUtils;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -60,9 +59,6 @@ public class MainFragment extends Fragment implements DoInBackground.Callback {
             lastTimestamp = 0;
         }
 
-        doInBackground = getDoInBackground();
-        doInBackground.execute();
-
         Cache.load(getContext(), new Noti(), notiList, Constants.FILE_NOTIFICATIONS);
 
         coordinatorLayout = (CoordinatorLayout) getActivity().findViewById(R.id.coordinatorLayout);
@@ -73,6 +69,8 @@ public class MainFragment extends Fragment implements DoInBackground.Callback {
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         recyclerView.setAdapter(adapter);
 
+        doInBackground = getDoInBackground();
+        doInBackground.execute();
     }
 
 
@@ -91,6 +89,11 @@ public class MainFragment extends Fragment implements DoInBackground.Callback {
 
         if (snackbar != null)
             snackbar.dismiss();
+
+        if (!NetworkUtils.isNetworkAvailable(getContext())) {
+            doInBackground.cancel(true);
+            showError("OFFLINE");
+        }
 
     }
 
@@ -121,7 +124,7 @@ public class MainFragment extends Fragment implements DoInBackground.Callback {
 
         doInBackground = null;
 
-        int newAdded = 0; //TODO remove debug
+        int newAdded = 0, modified = 0; //TODO remove debug
 
         try {
 
@@ -132,24 +135,32 @@ public class MainFragment extends Fragment implements DoInBackground.Callback {
                 if (returnCode == 1) {
                     JSONArray jsonArray = jsonObject.getJSONArray("notifications");
 
-                    for (int i = 0; i < (newAdded = jsonArray.length()); i++) {
+                    for (int i = 0; i < jsonArray.length(); i++) {
                         JSONObject jso = jsonArray.getJSONObject(i);
                         Noti noti = new Noti().fromJSON(jso);
-                        if (noti != null)
-                            notiList.add(i, noti);
+                        if (noti != null) {
+                            if (notiList.contains(noti)) {
+                                int index = notiList.indexOf(noti);
+                                notiList.remove(index);
+                                notiList.add(index, noti);
+                                modified++;
+                            } else {
+                                notiList.add(i, noti);
+                                newAdded++;
+                            }
+                        }
                     }
                     //Save current timestamp
                     PreferenceHelper.putLong(getContext(), PreferenceHelper.TIME_LASTEST_NOTIFICATIONS, currentTimestamp);
 
                 } else
                     showError(jsonObject.getString(jsonObject.getString("extraInfo")));
-            } else if (NetworkUtils.isNetworkAvailable(getContext()))
-                showError("OFFLINE");
-            else showError("NETWORK_ERROR");
+            } else
+                showError("NETWORK_ERROR");
 
         } catch (JSONException e) {
             e.printStackTrace();
-            showError(e.toString());
+            showError("NETWORK_ERROR");
         }
 
         if (newAdded > 0) {
@@ -161,7 +172,7 @@ public class MainFragment extends Fragment implements DoInBackground.Callback {
         adapter.setArrayList(notiList);
         adapter.notifyDataSetChanged();
         //TODO remove error
-        Toast.makeText(getContext(), "New: " + newAdded + ", Total: " + notiList.size(), Toast.LENGTH_SHORT).show();
+        Toast.makeText(getContext(), "New: " + newAdded + ", Modified: " + modified + ", Total: " + notiList.size(), Toast.LENGTH_SHORT).show();
     }
 
     private void showError(String error) {
@@ -186,7 +197,7 @@ public class MainFragment extends Fragment implements DoInBackground.Callback {
     }
 
     private void showOfflineSnackbar(boolean error) {
-        snackbar = Snackbar.make(coordinatorLayout, error ? "You're offline" : "Couldn't connect to internet", Snackbar.LENGTH_INDEFINITE).setAction("Try Again", new View.OnClickListener() {
+        snackbar = Snackbar.make(coordinatorLayout, error ? "Couldn't connect to internet" : "You're offline", Snackbar.LENGTH_INDEFINITE).setAction("Try Again", new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 doInBackground = getDoInBackground();

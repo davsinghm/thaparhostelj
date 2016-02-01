@@ -7,10 +7,12 @@ public class Constants {
 
     public final static String CHARSET_UTF8 = "UTF-8";
 
-    public static final String URL_SERVER = "http://192.168.2.4/hostelJ";//http://hosteljthapar.comli.com/";
+    public static final String URL_SERVER = "http://172.31.131.92/hostelJ/"; //"http://192.168.2.4/hostelJ";
     public static final String URL_SERVER_LOGIN = URL_SERVER + "/login.php";
     public static final String URL_SERVER_NOTI = URL_SERVER + "/notifications.php";
     public static final String URL_SERVER_COMPLAINTS = URL_SERVER + "/complaints.php";
+    public static final String URL_SERVER_NEW_COMPLAINT = URL_SERVER + "/newComplaint.php";
+
 
     public static final int OK_CONNECT_TIMEOUT = 15; // in seconds
     public static final int OK_READ_TIMEOUT = 15; // in seconds

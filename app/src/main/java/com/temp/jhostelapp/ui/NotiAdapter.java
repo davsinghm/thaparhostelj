@@ -53,7 +53,7 @@ public class NotiAdapter extends RecyclerView.Adapter<NotiAdapter.ViewHolder> {
         public void onClick(View v) {
             line1.setMaxLines(expanded ? 1 : Integer.MAX_VALUE);
             expanded = !expanded;
-            notifyDataSetChanged();
+            notifyItemChanged(getAdapterPosition());
         }
     }
 

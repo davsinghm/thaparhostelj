@@ -28,7 +28,7 @@ public class Cache {
                     JSONObject jso = jsonArray.getJSONObject(i);
                     if (t instanceof Noti)
                         t = (T) new Noti().fromJSON(jso);
-                     else if (t instanceof Complaint)
+                    else if (t instanceof Complaint)
                         t = (T) new Complaint().fromJSON(jso);
                     else t = null;
 

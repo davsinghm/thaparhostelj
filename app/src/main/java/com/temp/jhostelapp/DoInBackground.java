@@ -37,12 +37,13 @@ public class DoInBackground extends AsyncTask<String, Void, String> {
     protected void onPreExecute() {
         super.onPreExecute();
 
+        callback.onPreExecute();
+
         progressDialog = new ProgressDialog(context);
         progressDialog.setMessage(message);
         progressDialog.setCancelable(false);
         progressDialog.show();
 
-        callback.onPreExecute();
 
     }
 

@@ -177,7 +177,7 @@ public class LoginFragment extends Fragment implements DoInBackground.Callback {
     }
 
     private void showOfflineSnackbar(boolean error) {
-        snackbar = Snackbar.make(coordinatorLayout, error ? "You're offline" : "Couldn't connect to internet", Snackbar.LENGTH_INDEFINITE).setAction("Try Again", new View.OnClickListener() {
+        snackbar = Snackbar.make(coordinatorLayout, error ? "Couldn't connect to internet" : "You're offline", Snackbar.LENGTH_INDEFINITE).setAction("Try Again", new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
@@ -198,6 +198,11 @@ public class LoginFragment extends Fragment implements DoInBackground.Callback {
 
         if (snackbar != null)
             snackbar.dismiss();
+
+        if (!NetworkUtils.isNetworkAvailable(getContext())) {
+            doInBackground.cancel(true);
+            showError("OFFLINE");
+        }
 
     }
 
@@ -249,10 +254,9 @@ public class LoginFragment extends Fragment implements DoInBackground.Callback {
 
 
             } catch (JSONException e) {
-                showError(e.toString());
+                showError("NETWORK_ERROR");
             }
-        } else if (NetworkUtils.isNetworkAvailable(getContext()))
-            showError("OFFLINE");
+        }
         else
             showError("NETWORK_ERROR");
     }
