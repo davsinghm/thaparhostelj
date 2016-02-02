@@ -3,6 +3,7 @@ package com.temp.jhostelapp.ui;
 import android.content.Context;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -31,6 +32,17 @@ public class ComplaintActivity extends AppCompatActivity implements DoInBackgrou
     private String complaint;
     private String category;
     private Context context;
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                finish();
+                return true;
+        }
+
+        return false;
+    }
 
     @Override
     public void onPreExecute() {
