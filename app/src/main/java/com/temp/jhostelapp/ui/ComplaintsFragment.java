@@ -22,6 +22,7 @@ import com.temp.jhostelapp.PreferenceHelper;
 import com.temp.jhostelapp.R;
 import com.temp.jhostelapp.utils.FileUtils;
 import com.temp.jhostelapp.utils.NetworkUtils;
+import com.temp.jhostelapp.utils.Utils;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -74,6 +75,7 @@ public class ComplaintsFragment extends Fragment implements DoInBackground.Callb
             }
         });
         swipeRefreshLayout = (SwipeRefreshLayout) getActivity().findViewById(R.id.swipeRefreshLayout);
+        swipeRefreshLayout.setColorSchemeColors(Utils.getAccentColor(getContext()));
         swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {

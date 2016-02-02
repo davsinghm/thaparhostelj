@@ -104,10 +104,10 @@ public class ComplaintActivity extends AppCompatActivity implements DoInBackgrou
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                complaint = editText.getText().toString();
+                complaint = editText.getText().toString().trim();
                 category = (String) spinner.getSelectedItem();
                 if (complaint.isEmpty()) {
-                    Toast.makeText(context, "Empty message", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(context, "Message is empty", Toast.LENGTH_SHORT).show();
                     return;
                 }
                 if (category.equals("Category")) {

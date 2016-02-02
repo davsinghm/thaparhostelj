@@ -73,6 +73,7 @@ public class MessMenuFragment extends Fragment implements DoInBackground.Callbac
         }
 
         swipeRefreshLayout = (SwipeRefreshLayout) getActivity().findViewById(R.id.swipeRefreshLayout);
+        swipeRefreshLayout.setColorSchemeColors(Utils.getAccentColor(getContext()));
         swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {

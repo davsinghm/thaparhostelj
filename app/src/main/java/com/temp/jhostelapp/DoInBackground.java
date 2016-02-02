@@ -50,8 +50,9 @@ public class DoInBackground extends AsyncTask<String, Void, String> {
             progressDialog.show();
         }
 
-        if (swipeRefreshLayout != null)
+        if (swipeRefreshLayout != null) {
             swipeRefreshLayout.setRefreshing(true);
+        }
 
         callback.onPreExecute();
 
