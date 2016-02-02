@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -39,6 +40,7 @@ public class MainFragment extends Fragment implements DoInBackground.Callback {
     private CoordinatorLayout coordinatorLayout;
     private Snackbar snackbar;
     private ArrayList<Noti> notiList;
+    private SwipeRefreshLayout swipeRefreshLayout;
 
 
     @Override
@@ -62,6 +64,14 @@ public class MainFragment extends Fragment implements DoInBackground.Callback {
         Cache.load(getContext(), new Noti(), notiList, Constants.FILE_NOTIFICATIONS);
 
         coordinatorLayout = (CoordinatorLayout) getActivity().findViewById(R.id.coordinatorLayout);
+        swipeRefreshLayout = (SwipeRefreshLayout) getActivity().findViewById(R.id.swipeRefreshLayout);
+        swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                doInBackground = getDoInBackground();
+                doInBackground.execute();
+            }
+        });
         adapter = new NotiAdapter(notiList);
 
         RecyclerView recyclerView = (RecyclerView) getActivity().findViewById(R.id.recyclerView);
@@ -208,7 +218,7 @@ public class MainFragment extends Fragment implements DoInBackground.Callback {
     }
 
     private DoInBackground getDoInBackground() {
-        return new DoInBackground(getContext(), this, getString(R.string.progress_loading));
+        return new DoInBackground(this, swipeRefreshLayout);
     }
 
 }

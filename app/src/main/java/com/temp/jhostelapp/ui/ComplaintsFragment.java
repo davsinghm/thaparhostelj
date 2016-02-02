@@ -6,6 +6,7 @@ import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -41,6 +42,7 @@ public class ComplaintsFragment extends Fragment implements DoInBackground.Callb
     private CoordinatorLayout coordinatorLayout;
     private Snackbar snackbar;
     private ArrayList<Complaint> complaintList;
+    private SwipeRefreshLayout swipeRefreshLayout;
 
 
     @Override
@@ -69,6 +71,14 @@ public class ComplaintsFragment extends Fragment implements DoInBackground.Callb
             public void onClick(View v) {
                 Intent intent = new Intent(getContext(), ComplaintActivity.class);
                 startActivity(intent);
+            }
+        });
+        swipeRefreshLayout = (SwipeRefreshLayout) getActivity().findViewById(R.id.swipeRefreshLayout);
+        swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                doInBackground = getDoInBackground();
+                doInBackground.execute();
             }
         });
         coordinatorLayout = (CoordinatorLayout) getActivity().findViewById(R.id.coordinatorLayout);
@@ -218,7 +228,7 @@ public class ComplaintsFragment extends Fragment implements DoInBackground.Callb
     }
 
     private DoInBackground getDoInBackground() {
-        return new DoInBackground(getContext(), this, getString(R.string.progress_loading));
+        return new DoInBackground(this, swipeRefreshLayout);
     }
 
 }

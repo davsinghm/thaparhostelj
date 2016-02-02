@@ -3,8 +3,7 @@ package com.temp.jhostelapp;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.os.AsyncTask;
-
-import java.io.IOException;
+import android.support.v4.widget.SwipeRefreshLayout;
 
 /**
  * Created by DSM_ on 1/30/16.
@@ -24,26 +23,37 @@ public class DoInBackground extends AsyncTask<String, Void, String> {
 
     private Context context;
     private Callback callback;
+    private SwipeRefreshLayout swipeRefreshLayout;
     private ProgressDialog progressDialog;
     private String message;
 
-    public DoInBackground(Context context, Callback callback, String progressDialogMessage) {
+
+    public DoInBackground(Context context, Callback callback, String string) {
         this.context = context;
         this.callback = callback;
-        this.message = progressDialogMessage;
+        this.message = string;
+    }
+
+    public DoInBackground(Callback callback, SwipeRefreshLayout swipeRefreshLayout) {
+        this.callback = callback;
+        this.swipeRefreshLayout = swipeRefreshLayout;
     }
 
     @Override
     protected void onPreExecute() {
         super.onPreExecute();
 
+        if (context != null) {
+            progressDialog = new ProgressDialog(context);
+            progressDialog.setMessage(message);
+            progressDialog.setCancelable(false);
+            progressDialog.show();
+        }
+
+        if (swipeRefreshLayout != null)
+            swipeRefreshLayout.setRefreshing(true);
+
         callback.onPreExecute();
-
-        progressDialog = new ProgressDialog(context);
-        progressDialog.setMessage(message);
-        progressDialog.setCancelable(false);
-        progressDialog.show();
-
 
     }
 
@@ -51,7 +61,12 @@ public class DoInBackground extends AsyncTask<String, Void, String> {
     protected void onPostExecute(String s) {
         super.onPostExecute(s);
 
-        progressDialog.dismiss();
+        if (progressDialog != null)
+            progressDialog.dismiss();
+
+        if (swipeRefreshLayout != null)
+            swipeRefreshLayout.setRefreshing(false);
+
         callback.onPostExecute(s);
     }
 
@@ -59,14 +74,19 @@ public class DoInBackground extends AsyncTask<String, Void, String> {
     protected void onCancelled() {
         super.onCancelled();
 
-        progressDialog.dismiss();
+        if (progressDialog != null)
+            progressDialog.dismiss();
+
+        if (swipeRefreshLayout != null)
+            swipeRefreshLayout.setRefreshing(false);
+
         callback.onCancelled();
     }
 
     @Override
     protected String doInBackground(String... params) {
 
-        //TODO remove dialog wait simulation
+        //TODO remove wait simulation
 
         try {
             Thread.sleep(1000);

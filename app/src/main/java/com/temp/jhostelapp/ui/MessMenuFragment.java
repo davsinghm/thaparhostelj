@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -43,7 +44,7 @@ public class MessMenuFragment extends Fragment implements DoInBackground.Callbac
     private Snackbar snackbar;
     private ArrayList<MessMeal> menuList;
     private TextView textView;
-
+    private SwipeRefreshLayout swipeRefreshLayout;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -71,6 +72,14 @@ public class MessMenuFragment extends Fragment implements DoInBackground.Callbac
             textView.setText("Last updated on: " + lastUpdatedOn);
         }
 
+        swipeRefreshLayout = (SwipeRefreshLayout) getActivity().findViewById(R.id.swipeRefreshLayout);
+        swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                doInBackground = getDoInBackground();
+                doInBackground.execute();
+            }
+        });
         coordinatorLayout = (CoordinatorLayout) getActivity().findViewById(R.id.coordinatorLayout);
         adapter = new MessMenuAdapter(menuList);
 
@@ -230,7 +239,7 @@ public class MessMenuFragment extends Fragment implements DoInBackground.Callbac
     }
 
     private DoInBackground getDoInBackground() {
-        return new DoInBackground(getContext(), this, getString(R.string.progress_loading));
+        return new DoInBackground(this, swipeRefreshLayout);
     }
 
 }

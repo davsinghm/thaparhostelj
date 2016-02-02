@@ -36,7 +36,6 @@ public class ComplaintAdapter extends RecyclerView.Adapter<ComplaintAdapter.View
         public TextView complaint;
         public TextView timestamp;
         public CardView cardView;
-        public int color;
 
         public ViewHolder(final View view) {
             super(view);
@@ -47,7 +46,7 @@ public class ComplaintAdapter extends RecyclerView.Adapter<ComplaintAdapter.View
             complaint = (TextView) view.findViewById(R.id.complaint);
             status = (TextView) view.findViewById(R.id.status);
             timestamp = (TextView) view.findViewById(R.id.timestamp);
-            color = status.getCurrentTextColor();
+
         }
 
         @Override
@@ -62,7 +61,7 @@ public class ComplaintAdapter extends RecyclerView.Adapter<ComplaintAdapter.View
     }
 
     @Override
-    public void onBindViewHolder(final ComplaintAdapter.ViewHolder viewHolder, final int position) {
+    public void onBindViewHolder(ComplaintAdapter.ViewHolder viewHolder, final int position) {
 
         Complaint complaint = arrayList.get(position);
         viewHolder.category.setText(complaint.getCategory());
@@ -70,9 +69,7 @@ public class ComplaintAdapter extends RecyclerView.Adapter<ComplaintAdapter.View
         viewHolder.timestamp.setText(String.valueOf(complaint.getStartTimestamp()));
         viewHolder.status.setText(getStatus(complaint.getStatus()));
         String color = getStatusColor(complaint.getStatus());
-        if (color != null)
-            viewHolder.status.setTextColor(Color.parseColor(color));
-        else viewHolder.status.setTextColor(viewHolder.color);
+        viewHolder.cardView.setCardBackgroundColor(Color.parseColor(color));
 
     }
 
@@ -89,7 +86,7 @@ public class ComplaintAdapter extends RecyclerView.Adapter<ComplaintAdapter.View
                 return "#8BC34A";
             case "REGISTERED":
             default:
-                return null;
+                return "#FFFFFF";
         }
     }
 

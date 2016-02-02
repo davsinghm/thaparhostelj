@@ -7,30 +7,36 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:paddingBottom="6dp"
-        android:paddingLeft="@dimen/activity_horizontal_margin"
-        android:paddingRight="@dimen/activity_horizontal_margin"
-        android:paddingTop="6dp">
+        android:orientation="vertical">
 
         <TextView
             android:id="@+id/textView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:paddingTop="4dp"
             android:paddingBottom="10dp"
-            android:textSize="16sp"
             android:paddingLeft="3dp"
-            android:paddingRight="3dp"/>
+            android:paddingRight="3dp"
+            android:paddingTop="4dp"
+            android:textSize="16sp"
+            android:visibility="gone" />
 
-        <android.support.v7.widget.RecyclerView
-            android:id="@+id/recyclerView"
+        <android.support.v4.widget.SwipeRefreshLayout
+            android:id="@+id/swipeRefreshLayout"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:clipToPadding="false"
+            android:layout_height="match_parent">
 
-            android:scrollbarStyle="outsideOverlay"
-            android:scrollbars="vertical" />
+            <android.support.v7.widget.RecyclerView
+                android:id="@+id/recyclerView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:paddingBottom="6dp"
+                android:paddingLeft="@dimen/activity_horizontal_margin"
+                android:paddingRight="@dimen/activity_horizontal_margin"
+                android:paddingTop="6dp"
+                android:scrollbarStyle="outsideOverlay"
+                android:scrollbars="vertical" />
+        </android.support.v4.widget.SwipeRefreshLayout>
 
     </LinearLayout>
 
