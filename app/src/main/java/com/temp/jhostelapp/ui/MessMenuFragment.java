@@ -1,16 +1,16 @@
 package com.temp.jhostelapp.ui;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.CoordinatorLayout;
-import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.temp.jhostelapp.Cache;
@@ -21,6 +21,7 @@ import com.temp.jhostelapp.PreferenceHelper;
 import com.temp.jhostelapp.R;
 import com.temp.jhostelapp.utils.FileUtils;
 import com.temp.jhostelapp.utils.NetworkUtils;
+import com.temp.jhostelapp.utils.Utils;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -32,47 +33,46 @@ import java.util.ArrayList;
 /**
  * Created by DSM_ on 1/30/16.
  */
-public class ComplaintsFragment extends Fragment implements DoInBackground.Callback {
+public class MessMenuFragment extends Fragment implements DoInBackground.Callback {
 
     private DoInBackground doInBackground = null;
-    private ComplaintAdapter adapter;
+    private MessMenuAdapter adapter;
     private long lastTimestamp;
     private long currentTimestamp;
     private CoordinatorLayout coordinatorLayout;
     private Snackbar snackbar;
-    private ArrayList<Complaint> complaintList;
+    private ArrayList<MessMeal> menuList;
+    private TextView textView;
 
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_complaints, container, false);
+        return inflater.inflate(R.layout.fragment_messmenu, container, false);
     }
 
     @Override
     public void onStart() {
         super.onStart();
 
-        complaintList = new ArrayList<>();
-        lastTimestamp = PreferenceHelper.getLong(getContext(), PreferenceHelper.TIME_LATEST_COMPLAINTS, 0);
+        menuList = new ArrayList<>();
+        lastTimestamp = PreferenceHelper.getLong(getContext(), PreferenceHelper.TIME_LATEST_MESS_MENU, 0);
         currentTimestamp = System.currentTimeMillis() / 1000;
 
-        if (lastTimestamp != 0 && FileUtils.readCache(getContext(), Constants.FILE_COMPLAINTS) == null) {
+        if (lastTimestamp != 0 && FileUtils.readCache(getContext(), Constants.FILE_MESS_MENU) == null) {
             //checking if file doesn't exists (when read/write fails) and lastTimestamp should be made 0
             lastTimestamp = 0;
         }
 
-        Cache.load(getContext(), new Complaint(), complaintList, Constants.FILE_COMPLAINTS);
+        Cache.load(getContext(), new MessMeal(), menuList, Constants.FILE_MESS_MENU);
 
-        FloatingActionButton floatingActionButton = (FloatingActionButton) getActivity().findViewById(R.id.floatingActionButton);
-        floatingActionButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(getContext(), ComplaintActivity.class);
-                startActivity(intent);
-            }
-        });
+        textView = (TextView) getActivity().findViewById(R.id.textView);
+        long lastUpdatedOn = PreferenceHelper.getLong(getContext(), PreferenceHelper.TIME_MESS_MENU_UPDATED_ON, 0);
+        if (lastUpdatedOn != 0) {
+            textView.setText("Last updated on: " + lastUpdatedOn);
+        }
+
         coordinatorLayout = (CoordinatorLayout) getActivity().findViewById(R.id.coordinatorLayout);
-        adapter = new ComplaintAdapter(complaintList);
+        adapter = new MessMenuAdapter(menuList);
 
         RecyclerView recyclerView = (RecyclerView) getActivity().findViewById(R.id.recyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
@@ -120,7 +120,7 @@ public class ComplaintsFragment extends Fragment implements DoInBackground.Callb
             params.add("token", PreferenceHelper.getToken(getContext()));
             params.add("timestamp", String.valueOf(lastTimestamp));
 
-            return NetworkUtils.makeHttpRequest(Constants.URL_SERVER_COMPLAINTS, "POST", params);
+            return NetworkUtils.makeHttpRequest(Constants.URL_SERVER_MESS_MENU, "POST", params);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -140,28 +140,40 @@ public class ComplaintsFragment extends Fragment implements DoInBackground.Callb
             if (result != null) {
 
                 JSONObject jsonObject = new JSONObject(result);
+                Log.e("TEST", jsonObject.toString());
+                long lastUpdatedOn = 0;
 
                 int returnCode = jsonObject.getInt("returnCode");
                 if (returnCode == 1) {
-                    JSONArray jsonArray = jsonObject.getJSONArray("complaints");
+
+                    JSONArray jsonArray = jsonObject.getJSONArray("menu");
+
+                    if (jsonArray.length() > 0) {
+                        lastUpdatedOn = Utils.parseLong(jsonObject.getString("timestamp"), 0);
+                        if (lastUpdatedOn != 0)
+                            textView.setText("Last updated on: " + lastUpdatedOn);
+                    }
 
                     for (int i = 0; i < jsonArray.length(); i++) {
                         JSONObject jso = jsonArray.getJSONObject(i);
-                        Complaint complaint = new Complaint().fromJSON(jso);
-                        if (complaint != null) {
-                            if (complaintList.contains(complaint)) {
-                                int index = complaintList.indexOf(complaint);
-                                complaintList.remove(index);
-                                complaintList.add(index, complaint);
+                        MessMeal messMeal = new MessMeal().fromJSON(jso);
+                        if (messMeal != null) {
+                            if (menuList.contains(messMeal)) {
+                                int index = menuList.indexOf(messMeal);
+                                menuList.remove(index);
+                                menuList.add(index, messMeal);
                                 modified++;
                             } else {
-                                complaintList.add(i, complaint);
+                                menuList.add(i, messMeal);
                                 newAdded++;
                             }
                         }
                     }
+
+                    PreferenceHelper.putLong(getContext(), PreferenceHelper.TIME_MESS_MENU_UPDATED_ON, lastUpdatedOn);
+
                     //Save current timestamp
-                    PreferenceHelper.putLong(getContext(), PreferenceHelper.TIME_LATEST_COMPLAINTS, currentTimestamp);
+                    PreferenceHelper.putLong(getContext(), PreferenceHelper.TIME_LATEST_MESS_MENU, currentTimestamp);
 
                 } else
                     showError(jsonObject.getString(jsonObject.getString("extraInfo")));
@@ -174,15 +186,15 @@ public class ComplaintsFragment extends Fragment implements DoInBackground.Callb
         }
 
         if (newAdded > 0) {
-            String compStr = Cache.arrayToJSONArray(complaintList);
+            String compStr = Cache.arrayToJSONArray(menuList);
             if (compStr != null)
-                FileUtils.writeStringCache(getContext(), Constants.FILE_COMPLAINTS, compStr);
+                FileUtils.writeStringCache(getContext(), Constants.FILE_MESS_MENU, compStr);
         }
 
-        adapter.setArrayList(complaintList);
+        adapter.setArrayList(menuList);
         adapter.notifyDataSetChanged();
         //TODO remove error
-        Toast.makeText(getContext(), "New: " + newAdded + ", Modified: " + modified + ", Total: " + complaintList.size(), Toast.LENGTH_SHORT).show();
+        Toast.makeText(getContext(), "New: " + newAdded + ", Modified: " + modified + ", Total: " + menuList.size(), Toast.LENGTH_SHORT).show();
     }
 
     private void showError(String error) {

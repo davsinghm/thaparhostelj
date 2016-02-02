@@ -17,9 +17,6 @@ import com.temp.jhostelapp.Constants;
 import com.temp.jhostelapp.MainActivityInterface;
 import com.temp.jhostelapp.PreferenceHelper;
 import com.temp.jhostelapp.R;
-import com.temp.jhostelapp.ui.ComplaintsFragment;
-import com.temp.jhostelapp.ui.LoginFragment;
-import com.temp.jhostelapp.ui.MainFragment;
 
 import java.io.File;
 
@@ -31,6 +28,7 @@ public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener, MainActivityInterface {
 
     private DrawerLayout mDrawerLayout;
+    private NavigationView navigationView;
     private ActionBar mActionBar;
 
     @Override
@@ -51,7 +49,7 @@ public class MainActivity extends AppCompatActivity
         mDrawerLayout.setDrawerListener(toggle);
         toggle.syncState();
 
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+        navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
         String token = PreferenceHelper.getToken(this);
@@ -83,6 +81,7 @@ public class MainActivity extends AppCompatActivity
         if (mActionBar != null)
             mActionBar.show();
         mDrawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
+        navigationView.getMenu().getItem(0).setChecked(true);
     }
 
     @Override
@@ -132,14 +131,24 @@ public class MainActivity extends AppCompatActivity
                         .commit();
                 break;
 
+            case R.id.nav_mess_menu:
+                fragment = new MessMenuFragment();
+                getSupportFragmentManager().beginTransaction()
+                        .replace(R.id.frameLayout, fragment)
+                        .commit();
+                break;
+
             case R.id.nav_logout:
                 PreferenceHelper.putRollNo(this, null);
                 PreferenceHelper.putToken(this, null);
-                PreferenceHelper.putLong(this, PreferenceHelper.TIME_LASTEST_NOTIFICATIONS, 0);
-                PreferenceHelper.putLong(this, PreferenceHelper.TIME_LASTEST_NOTIFICATIONS, 0);
+                PreferenceHelper.putLong(this, PreferenceHelper.TIME_LATEST_NOTIFICATIONS, 0);
+                PreferenceHelper.putLong(this, PreferenceHelper.TIME_LATEST_COMPLAINTS, 0);
+                PreferenceHelper.putLong(this, PreferenceHelper.TIME_LATEST_MESS_MENU, 0);
+                PreferenceHelper.putLong(this, PreferenceHelper.TIME_MESS_MENU_UPDATED_ON, 0);
 
                 new File(getCacheDir(), Constants.FILE_COMPLAINTS).delete();
                 new File(getCacheDir(), Constants.FILE_NOTIFICATIONS).delete();
+                new File(getCacheDir(), Constants.FILE_MESS_MENU).delete();
 
                 Toast.makeText(this, "Logged out successfully", Toast.LENGTH_SHORT).show();
                 promptLogin();

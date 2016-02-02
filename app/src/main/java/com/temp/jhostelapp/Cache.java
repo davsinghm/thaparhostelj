@@ -3,6 +3,7 @@ package com.temp.jhostelapp;
 import android.content.Context;
 
 import com.temp.jhostelapp.ui.Complaint;
+import com.temp.jhostelapp.ui.MessMeal;
 import com.temp.jhostelapp.ui.Noti;
 import com.temp.jhostelapp.utils.FileUtils;
 
@@ -30,6 +31,8 @@ public class Cache {
                         t = (T) new Noti().fromJSON(jso);
                     else if (t instanceof Complaint)
                         t = (T) new Complaint().fromJSON(jso);
+                    else if (t instanceof MessMeal)
+                        t = (T) new MessMeal().fromJSON(jso);
                     else t = null;
 
                     if (t != null)

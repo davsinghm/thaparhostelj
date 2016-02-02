@@ -12,8 +12,10 @@ import com.temp.jhostelapp.utils.Utils;
 public class PreferenceHelper {
 
     //preference names
-    final public static String TIME_LASTEST_NOTIFICATIONS = "time_lastest_notifications";
-    final public static String TIME_LASTEST_COMPLAINTS = "time_lastest_complaints";
+    final public static String TIME_LATEST_NOTIFICATIONS = "time_latest_notifications";
+    final public static String TIME_LATEST_COMPLAINTS = "time_latest_complaints";
+    final public static String TIME_LATEST_MESS_MENU = "time_lastest_mess_menu";
+    final public static String TIME_MESS_MENU_UPDATED_ON = "time_mess_menu_updated_on";
 
     //caching frequently used strings
     private static String rollNo;

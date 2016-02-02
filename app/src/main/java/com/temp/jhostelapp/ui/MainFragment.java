@@ -51,7 +51,7 @@ public class MainFragment extends Fragment implements DoInBackground.Callback {
         super.onStart();
 
         notiList = new ArrayList<>();
-        lastTimestamp = PreferenceHelper.getLong(getContext(), PreferenceHelper.TIME_LASTEST_NOTIFICATIONS, 0);
+        lastTimestamp = PreferenceHelper.getLong(getContext(), PreferenceHelper.TIME_LATEST_NOTIFICATIONS, 0);
         currentTimestamp = System.currentTimeMillis() / 1000;
 
         if (lastTimestamp != 0 && FileUtils.readCache(getContext(), Constants.FILE_NOTIFICATIONS) == null) {
@@ -151,7 +151,7 @@ public class MainFragment extends Fragment implements DoInBackground.Callback {
                         }
                     }
                     //Save current timestamp
-                    PreferenceHelper.putLong(getContext(), PreferenceHelper.TIME_LASTEST_NOTIFICATIONS, currentTimestamp);
+                    PreferenceHelper.putLong(getContext(), PreferenceHelper.TIME_LATEST_NOTIFICATIONS, currentTimestamp);
 
                 } else
                     showError(jsonObject.getString(jsonObject.getString("extraInfo")));

@@ -1,6 +1,7 @@
 package com.temp.jhostelapp.ui;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -34,17 +35,19 @@ public class ComplaintAdapter extends RecyclerView.Adapter<ComplaintAdapter.View
         public TextView status;
         public TextView complaint;
         public TextView timestamp;
+        public CardView cardView;
+        public int color;
 
         public ViewHolder(final View view) {
             super(view);
 
-            CardView cardView = (CardView) view.findViewById(R.id.cardView);
+            cardView = (CardView) view.findViewById(R.id.cardView);
             cardView.setOnClickListener(this);
             category = (TextView) view.findViewById(R.id.category);
             complaint = (TextView) view.findViewById(R.id.complaint);
             status = (TextView) view.findViewById(R.id.status);
             timestamp = (TextView) view.findViewById(R.id.timestamp);
-
+            color = status.getCurrentTextColor();
         }
 
         @Override
@@ -65,8 +68,46 @@ public class ComplaintAdapter extends RecyclerView.Adapter<ComplaintAdapter.View
         viewHolder.category.setText(complaint.getCategory());
         viewHolder.complaint.setText(complaint.getComplaint());
         viewHolder.timestamp.setText(String.valueOf(complaint.getStartTimestamp()));
-        viewHolder.status.setText(complaint.getStatus());
+        viewHolder.status.setText(getStatus(complaint.getStatus()));
+        String color = getStatusColor(complaint.getStatus());
+        if (color != null)
+            viewHolder.status.setTextColor(Color.parseColor(color));
+        else viewHolder.status.setTextColor(viewHolder.color);
 
+    }
+
+    private String getStatusColor(String string) {
+        switch (string) {
+
+            case "UNRESOLVED":
+                return "#FFC107";
+            case "FWDED_PROCTOR":
+                return "#FF9800";
+            case "FWDED_WARDEN":
+                return "#F44336";
+            case "RESOLVED":
+                return "#8BC34A";
+            case "REGISTERED":
+            default:
+                return null;
+        }
+    }
+
+    private String getStatus(String string) {
+        switch (string) {
+            case "REGISTERED":
+                return "Registered";
+            case "UNRESOLVED":
+                return "Unresolved";
+            case "FWDED_PROCTOR":
+                return "Forwarded to Proctor";
+            case "FWDED_WARDEN":
+                return "Forwarded to Warden";
+            case "RESOLVED":
+                return "Resolved";
+            default:
+                return "Unknown";
+        }
     }
 
     @Override

@@ -11,6 +11,10 @@
             android:icon="@android:drawable/ic_menu_gallery"
             android:title="Complaints" />
         <item
+            android:id="@+id/nav_mess_menu"
+            android:icon="@android:drawable/ic_menu_slideshow"
+            android:title="Today's Menu" />
+        <item
             android:id="@+id/nav_mess_bill"
             android:icon="@android:drawable/ic_menu_slideshow"
             android:title="Mess Bill" />
