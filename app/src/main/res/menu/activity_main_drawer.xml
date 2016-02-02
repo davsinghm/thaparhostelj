@@ -4,23 +4,23 @@
     <group android:checkableBehavior="single">
         <item
             android:id="@+id/nav_notifications"
-            android:icon="@android:drawable/ic_menu_camera"
+            android:icon="@drawable/ic_sms_black_36dp"
             android:title="Notifications" />
         <item
             android:id="@+id/nav_complaints"
-            android:icon="@android:drawable/ic_menu_gallery"
+            android:icon="@drawable/ic_report_problem_black_36dp"
             android:title="Complaints" />
         <item
             android:id="@+id/nav_mess_menu"
-            android:icon="@android:drawable/ic_menu_slideshow"
+            android:icon="@drawable/ic_receipt_black_36dp"
             android:title="Today's Menu" />
         <item
             android:id="@+id/nav_mess_bill"
-            android:icon="@android:drawable/ic_menu_slideshow"
+            android:icon="@drawable/ic_attach_money_black_36dp"
             android:title="Mess Bill" />
         <item
             android:id="@+id/nav_order"
-            android:icon="@android:drawable/ic_menu_manage"
+            android:icon="@drawable/ic_restaurant_menu_black_36dp"
             android:title="Order" />
     </group>
 
@@ -28,11 +28,11 @@
         <menu>
             <item
                 android:id="@+id/nav_settings"
-                android:icon="@android:drawable/ic_menu_share"
+                android:icon="@drawable/ic_settings_black_36dp"
                 android:title="Settings" />
             <item
                 android:id="@+id/nav_logout"
-                android:icon="@android:drawable/ic_menu_send"
+                android:icon="@drawable/ic_exit_to_app_black_36dp"
                 android:title="Logout" />
         </menu>
     </item>
